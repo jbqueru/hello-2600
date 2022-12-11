@@ -84,53 +84,86 @@ Init:
 	LDX	#$FF
 	TXS
 
+; Wait a bit, so things can stabilize
+	LDA	#0
+	TAX
+	TAY
+Wait:	INY
+	BNE	Wait
+        INX
+        BNE	Wait
+
 ; Clear zero-page (TIA + RAM)
-	INX
-	TXA
+	TAX
 Clear:	STA	0,X
 	INX
 	BNE	Clear
 
-	LDA	#100
-        STA	_TIA_COLUPF
 Loop:
+; A line is a WSync followed by other things
+
 ; Overscan
+; First line of overscan: turn display off
+	STA	_TIA_WSYNC
 	LDA	#2
 	STA	_TIA_VBLANK
-	.repeat 30
+; Then 29 lines of overscan without anything in them
+	.repeat 29
 	STA	_TIA_WSYNC
 	.repend
 
 ; Vsync
+; First line of Vsync: turn sync on
+	STA	_TIA_WSYNC
 	LDA	#2
 	STA	_TIA_VSYNC
-	.repeat 3
+; Then 2 lines of vsync without anything in them
+	.repeat 2
 	STA	_TIA_WSYNC
 	.repend
-	LDA	#0
-	STA	_TIA_VSYNC
 
 ; Vblank
-	.repeat 37
+; First line of Vblank: turn sync off
+	STA	_TIA_WSYNC
+	LDA	#0
+	STA	_TIA_VSYNC
+; Then 36 lines of vsync without anything in them
+	.repeat 36
 	STA	_TIA_WSYNC
 	.repend
+
+; Active area
+; First line of Vblank: turn display on
+	STA	_TIA_WSYNC
 	LDA	#0
 	STA	_TIA_VBLANK
+	LDA	#1
+	STA	_TIA_PF2
+	LDA	#78
+	STA	_TIA_COLUPF
 
 	STA	_TIA_WSYNC
+	LDA	#6
+	STA	_TIA_PF2
+	LDA	#142
+	STA	_TIA_COLUPF
+
+	LDX	#95
+Lines:
 	STA	_TIA_WSYNC
-	.repeat 91
+	LDA	#1
+	STA	_TIA_PF2
+	LDA	#78
+	STA	_TIA_COLUPF
+
 	STA	_TIA_WSYNC
-        LDA	#1
-        STA	_TIA_PF2
-        LDA	#78
-        STA	_TIA_COLUPF
-	STA	_TIA_WSYNC
-        LDA	#6
-        STA	_TIA_PF2
-        LDA	#142
-        STA	_TIA_COLUPF
-	.repend
+	LDA	#6
+	STA	_TIA_PF2
+	LDA	#142
+	STA	_TIA_COLUPF
+
+	DEX
+        BNE	Lines
 
 	JMP	Loop
 
