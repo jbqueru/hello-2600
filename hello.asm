@@ -29,6 +29,36 @@ Clear:	STA	0,X
 	BNE	Clear
 
 Loop:
+; Overscan
+	.repeat 29
+	STA	2
+	.repend
+
+; Vsync
+	LDA	#2
+	STA	0
+	.repeat 3
+	STA	2
+	.repend
+	LDA	#0
+	STA	0
+
+; Vblank
+	.repeat 37
+	STA	2
+	.repend
+	LDA	#0
+	STA	1
+
+	.repeat 192
+	STA	2
+	.repend
+
+; Start Overscan
+	STA	2
+	LDA	#2
+	STA	1
+
 	JMP	Loop
 
 ; Reset / Start vectors
