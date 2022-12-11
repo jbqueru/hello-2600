@@ -77,6 +77,15 @@ _TIA_CO_YLW_GRN	.equ	$D0
 _TIA_CO_YLW_GRN	.equ	$D0
 _TIA_CO_YLW_GRN	.equ	$D0
 
+_TIA_LU_MIN	.equ	$0
+_TIA_LU_V_DARK	.equ	$2
+_TIA_LU_DARK	.equ	$4
+_TIA_LU_M_DARK	.equ	$6
+_TIA_LU_M_LIGHT	.equ	$8
+_TIA_LU_LIGHT	.equ	$A
+_TIA_LU_V_LIGHT	.equ	$C
+_TIA_LU_MAX	.equ	$E
+
 	.org	$F000
 Init:
 ; Set up CPU
@@ -139,31 +148,44 @@ Loop:
 	STA	_TIA_VBLANK
 	LDA	#1
 	STA	_TIA_PF2
-	LDA	#78
+	LDA	#_TIA_CO_PINK+_TIA_LU_MAX
 	STA	_TIA_COLUPF
 
 	STA	_TIA_WSYNC
 	LDA	#6
 	STA	_TIA_PF2
-	LDA	#142
+	LDA	#_TIA_CO_BLUE+_TIA_LU_MAX
 	STA	_TIA_COLUPF
 
-	LDX	#95
+	LDX	#94
 Lines:
 	STA	_TIA_WSYNC
 	LDA	#1
 	STA	_TIA_PF2
-	LDA	#78
+	LDA	#_TIA_CO_PINK+_TIA_LU_M_LIGHT
 	STA	_TIA_COLUPF
 
 	STA	_TIA_WSYNC
 	LDA	#6
 	STA	_TIA_PF2
-	LDA	#142
+	LDA	#_TIA_CO_BLUE+_TIA_LU_M_LIGHT
 	STA	_TIA_COLUPF
 
 	DEX
         BNE	Lines
+
+	STA	_TIA_WSYNC
+	LDA	#1
+	STA	_TIA_PF2
+	LDA	#_TIA_CO_PINK+_TIA_LU_MAX
+	STA	_TIA_COLUPF
+
+	STA	_TIA_WSYNC
+	LDA	#6
+	STA	_TIA_PF2
+	LDA	#_TIA_CO_BLUE+_TIA_LU_MAX
+	STA	_TIA_COLUPF
+
 
 	JMP	Loop
 
@@ -174,19 +196,69 @@ Lines:
 
 ; Notes
 
-; Address space repeats every 8kB
-
+; Address space repeats every 8kB (address bus only has 16 pins).
+;
 ; Bottom 4kB: repeat every 1kB
 ; each copy is split in slices of 128 bytes, with 3 possible slices
 ; 2 copies of TIA registers
-; RAM
+; RIOT RAM
 ; 2 copies of TIA registers
-; RAM
-; 2 copies of TIA registers
-; 4 copies of RIOT registers
+; RIOT RAM
 ; 2 copies of TIA registers
 ; 4 copies of RIOT registers
-
+; 2 copies of TIA registers
+; 4 copies of RIOT registers
+;
 ; Top 4kB: ROM
+
+; NTSC timings
+;
+; In the 1953 timings, a line is 227.5 cycles of color subcarrier,
+; and a field is 262.5 lines.
+; The vertical blank has 3 lines of equalizing pulse, 3 lines of sync,
+; 3 lines of equalizing pulse, and a total blank duration of 7% to 8%
+; of the total field time, i.e. 18.4 to 21 lines, for a total number of
+; active lines therefore between 241.5 and 243.5 (NTSC fields contain
+; a half-line).
+; 
+; In the 2600, lines are slightly longer than standard (228 cycles
+; of color subcarrier), and 262 lines is the number that best approximates
+; the standard frame rate and is closest to 60 fps. Following the spec
+; to the letter, the total blank should be between 18.3 and 20 lines, with
+; 21 lines being very slightly off-spec. 20 lines of blank results in 242
+; active lines, a conveniently even number, with 3 lines before sync,
+; 3 lines during sync, and 14 lines after sync.
+;
+; That matches the line counts in the NES, which however runs slightly fast
+; with 227 1/3 cycles of color subcarrier per line. They could have squeezed
+; an extra line of blank in there, to get closer to the official field rate.
+; The NES is active for 242 lines, with 2 empty lines, i.e.
+; 4 +/- 1 lines before sync, 3 lines of sync, 15 +/- 1 lines after sync.
+;
+; On the NES, the "guaranteed" drawing area is considered to be the middle
+; 192 lines of the active area, while the top and bottom 8 lines can
+; be considered to be near-invisible. In the 16 lines in between on either
+; side, 8 are considered safe enough at the top and 12 at the bottom,
+; probably a reflection of a desire for TVs to show slightly more at the bottom
+; because of new channels' marquees at the bottom.
+;
+; Converting that in lines for the 2600:
+; * Guaranteed: between 27+3+39 and 29+3+37
+; * Safe: between 15+3+32 and 17+3+30
+; * Likely visible: between 11+3+24 and 13+3+22
+; * 240 lines: between 3+3+16 and 5+3+14
+;
+; Even for the traditional 192 lines, it's possible that going 3 lines
+; lower than recommended by Atari (27+3+40) would produce better results
+; on old-style analog TVs, but the risk of confusing emulators is probably
+; not worth it.
+;
+; It's oddly ingrained that the 2600 has a fixed number of
+; lines, when in fact it doesn't care and will happily generate 242 lines
+; if you ask it to.
+;
+; For reference, Javatari renders 212 lines, with 17+3+30 timings, within the
+; safe range reverse-engineered above.
+
 
 ; 345678901234567890123456789012345678901234567890123456789012345678901234567890
