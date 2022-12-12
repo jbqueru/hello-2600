@@ -74,8 +74,8 @@ _TIA_CO_TURQ	.equ	$A0
 _TIA_CO_GRN_BLU	.equ	$B0
 _TIA_CO_GREEN	.equ	$C0
 _TIA_CO_YLW_GRN	.equ	$D0
-_TIA_CO_YLW_GRN	.equ	$D0
-_TIA_CO_YLW_GRN	.equ	$D0
+_TIA_CO_ORG_GRN	.equ	$E0
+_TIA_CO_LT_ORG	.equ	$F0
 
 _TIA_LU_MIN	.equ	$0
 _TIA_LU_V_DARK	.equ	$2
