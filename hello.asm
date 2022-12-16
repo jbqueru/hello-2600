@@ -113,79 +113,249 @@ Loop:
 
 ; Overscan
 ; First line of overscan: turn display off
-	STA	_TIA_WSYNC
+	STA	_TIA_WSYNC	; overscan line 1
 	LDA	#2
 	STA	_TIA_VBLANK
 ; Then 29 lines of overscan without anything in them
 	.repeat 29
-	STA	_TIA_WSYNC
+	STA	_TIA_WSYNC	; overscan line 2-30
 	.repend
 
 ; Vsync
 ; First line of Vsync: turn sync on
-	STA	_TIA_WSYNC
+	STA	_TIA_WSYNC	; vsync line 1
 	LDA	#2
 	STA	_TIA_VSYNC
 ; Then 2 lines of vsync without anything in them
 	.repeat 2
-	STA	_TIA_WSYNC
+	STA	_TIA_WSYNC	; vsync line 2-3
 	.repend
 
 ; Vblank
 ; First line of Vblank: turn sync off
-	STA	_TIA_WSYNC
+	STA	_TIA_WSYNC	; vblank line 1
 	LDA	#0
 	STA	_TIA_VSYNC
+        STA	_TIA_PF0
+        STA	_TIA_PF1
+        STA	_TIA_PF2
 ; Then 36 lines of vsync without anything in them
 	.repeat 36
-	STA	_TIA_WSYNC
+	STA	_TIA_WSYNC	; vblank line 2-37
 	.repend
+
+; 1111 00000100 11100100 0101 11100111 11011111
+; 1000 10000101 00010100 0101 00010100 00010000
+; 1000 10000101 00010010 1001 00010100 00010000
+; 1000 10000101 11110001 0001 11100111 10011110
+; 1000 10000101 00010001 0001 00010100 00010000
+; 1000 10100101 00010001 0001 00010100 00010000
+; 1111 00011001 00010001 0001 11110111 11011111
 
 ; Active area
 ; First line of Vblank: turn display on
-	STA	_TIA_WSYNC
+	STA	_TIA_WSYNC	; line 1
 	LDA	#0
 	STA	_TIA_VBLANK
-	LDA	#1
-	STA	_TIA_PF2
-	LDA	#_TIA_CO_PINK+_TIA_LU_MAX
+	STA	_TIA_WSYNC	; line 2
+	STA	_TIA_WSYNC	; line 3
+	LDA	#_TIA_CO_GOLD+_TIA_LU_LIGHT
 	STA	_TIA_COLUPF
+	STA	_TIA_WSYNC	; line 4
 
-	STA	_TIA_WSYNC
-	LDA	#6
-	STA	_TIA_PF2
-	LDA	#_TIA_CO_BLUE+_TIA_LU_MAX
-	STA	_TIA_COLUPF
+; 1111 00000100 11100100 0101 11100111 11011111
+	LDY	8
+Gfx1:
+	STA	_TIA_WSYNC	; line 5-12
+	LDA	#%11110000	; cycle 0
+	STA	_TIA_PF0	; cycle 2
+	LDA	#%00000100	; cycle 5
+	STA	_TIA_PF1	; cycle 7
+	LDA	#%00100111	; cycle 10
+	STA	_TIA_PF2	; cycle 12
 
-	LDX	#94
+; magic 21-cycle sequence
+	CLC
+	LDA	#$2A		; hides 'ROL A'
+	BCC	*-1
+
+	LDA	#%10100000	; cycle 36
+	STA	_TIA_PF0	; cycle 38
+	LDA	#%11100111	; cycle 41
+	STA	_TIA_PF1	; cycle 43
+	LDA	#%11111011	; cycle 46
+	STA	_TIA_PF2	; cycle 48
+
+	DEY
+        BNE	Gfx1
+
+; 1000 10000101 00010100 0101 00010100 00010000
+	LDY	8
+Gfx2:
+	STA	_TIA_WSYNC	; line 13-20
+	LDA	#%00010000	; cycle 0
+	STA	_TIA_PF0	; cycle 2
+	LDA	#%10000101	; cycle 5
+	STA	_TIA_PF1	; cycle 7
+	LDA	#%00101000	; cycle 10
+	STA	_TIA_PF2	; cycle 12
+
+; magic 21-cycle sequence
+	CLC
+	LDA	#$2A		; hides 'ROL A'
+	BCC	*-1
+
+	LDA	#%10100000	; cycle 36
+	STA	_TIA_PF0	; cycle 38
+	LDA	#%00010100	; cycle 41
+	STA	_TIA_PF1	; cycle 43
+	LDA	#%00001000	; cycle 46
+	STA	_TIA_PF2	; cycle 48
+
+	DEY
+        BNE	Gfx2
+
+; 1000 10000101 00010010 1001 00010100 00010000
+	LDY	8
+Gfx3:
+	STA	_TIA_WSYNC	; line 21-28
+	LDA	#%00010000	; cycle 0
+	STA	_TIA_PF0	; cycle 2
+	LDA	#%10000101	; cycle 5
+	STA	_TIA_PF1	; cycle 7
+	LDA	#%01001000	; cycle 10
+	STA	_TIA_PF2	; cycle 12
+
+; magic 21-cycle sequence
+	CLC
+	LDA	#$2A		; hides 'ROL A'
+	BCC	*-1
+
+	LDA	#%10010000	; cycle 36
+	STA	_TIA_PF0	; cycle 38
+	LDA	#%00010100	; cycle 41
+	STA	_TIA_PF1	; cycle 43
+	LDA	#%00001000	; cycle 46
+	STA	_TIA_PF2	; cycle 48
+
+	DEY
+        BNE	Gfx3
+
+; 1000 10000101 11110001 0001 11100111 10011110
+	LDY	8
+Gfx4:
+	STA	_TIA_WSYNC	; line 29-36
+	LDA	#%00010000	; cycle 0
+	STA	_TIA_PF0	; cycle 2
+	LDA	#%10000101	; cycle 5
+	STA	_TIA_PF1	; cycle 7
+	LDA	#%10001111	; cycle 10
+	STA	_TIA_PF2	; cycle 12
+
+; magic 21-cycle sequence
+	CLC
+	LDA	#$2A		; hides 'ROL A'
+	BCC	*-1
+
+	LDA	#%10000000	; cycle 36
+	STA	_TIA_PF0	; cycle 38
+	LDA	#%11100111	; cycle 41
+	STA	_TIA_PF1	; cycle 43
+	LDA	#%01111001	; cycle 46
+	STA	_TIA_PF2	; cycle 48
+
+	DEY
+        BNE	Gfx4
+
+; 1000 10000101 00010001 0001 00010100 00010000
+	LDY	8
+Gfx5:
+	STA	_TIA_WSYNC	; line 37-44
+	LDA	#%00010000	; cycle 0
+	STA	_TIA_PF0	; cycle 2
+	LDA	#%10000101	; cycle 5
+	STA	_TIA_PF1	; cycle 7
+	LDA	#%10001000	; cycle 10
+	STA	_TIA_PF2	; cycle 12
+
+; magic 21-cycle sequence
+	CLC
+	LDA	#$2A		; hides 'ROL A'
+	BCC	*-1
+
+	LDA	#%10000000	; cycle 36
+	STA	_TIA_PF0	; cycle 38
+	LDA	#%00010100	; cycle 41
+	STA	_TIA_PF1	; cycle 43
+	LDA	#%00001000	; cycle 46
+	STA	_TIA_PF2	; cycle 48
+
+	DEY
+        BNE	Gfx5
+
+; 1000 10100101 00010001 0001 00010100 00010000
+	LDY	8
+Gfx6:
+	STA	_TIA_WSYNC	; line 45-52
+	LDA	#%00010000	; cycle 0
+	STA	_TIA_PF0	; cycle 2
+	LDA	#%10100101	; cycle 5
+	STA	_TIA_PF1	; cycle 7
+	LDA	#%10001000	; cycle 10
+	STA	_TIA_PF2	; cycle 12
+
+; magic 21-cycle sequence
+	CLC
+	LDA	#$2A		; hides 'ROL A'
+	BCC	*-1
+
+	LDA	#%10000000	; cycle 36
+	STA	_TIA_PF0	; cycle 38
+	LDA	#%00010100	; cycle 41
+	STA	_TIA_PF1	; cycle 43
+	LDA	#%00001000	; cycle 46
+	STA	_TIA_PF2	; cycle 48
+
+	DEY
+        BNE	Gfx6
+
+; 1111 00011001 00010001 0001 11100111 11011111
+	LDY	8
+Gfx7:
+	STA	_TIA_WSYNC	; line 53-60
+	LDA	#%11110000	; cycle 0
+	STA	_TIA_PF0	; cycle 2
+	LDA	#%00011001	; cycle 5
+	STA	_TIA_PF1	; cycle 7
+	LDA	#%10001000	; cycle 10
+	STA	_TIA_PF2	; cycle 12
+
+; magic 21-cycle sequence
+	CLC
+	LDA	#$2A		; hides 'ROL A'
+	BCC	*-1
+
+	LDA	#%10000000	; cycle 36
+	STA	_TIA_PF0	; cycle 38
+	LDA	#%11100111	; cycle 41
+	STA	_TIA_PF1	; cycle 43
+	LDA	#%11111011	; cycle 46
+	STA	_TIA_PF2	; cycle 48
+
+	DEY
+        BNE	Gfx7
+
+	STA	_TIA_WSYNC	; line 61
+	LDA	#0
+        STA	_TIA_PF0
+        STA	_TIA_PF1
+        STA	_TIA_PF2
+
+	LDY	#131
 Lines:
-	STA	_TIA_WSYNC
-	LDA	#1
-	STA	_TIA_PF2
-	LDA	#_TIA_CO_PINK+_TIA_LU_M_LIGHT
-	STA	_TIA_COLUPF
-
-	STA	_TIA_WSYNC
-	LDA	#6
-	STA	_TIA_PF2
-	LDA	#_TIA_CO_BLUE+_TIA_LU_M_LIGHT
-	STA	_TIA_COLUPF
-
-	DEX
+	STA	_TIA_WSYNC	; line 62-192
+	DEY
         BNE	Lines
-
-	STA	_TIA_WSYNC
-	LDA	#1
-	STA	_TIA_PF2
-	LDA	#_TIA_CO_PINK+_TIA_LU_MAX
-	STA	_TIA_COLUPF
-
-	STA	_TIA_WSYNC
-	LDA	#6
-	STA	_TIA_PF2
-	LDA	#_TIA_CO_BLUE+_TIA_LU_MAX
-	STA	_TIA_COLUPF
-
 
 	JMP	Loop
 
